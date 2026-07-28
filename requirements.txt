@@ -13,6 +13,7 @@ gspread-dataframe
 gspread-formatting
 gspread-pandas
 google-api-python-client
+google.oauth2.service_account
 
 # Calculations & Visualization
 pandas
