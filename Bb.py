@@ -101,7 +101,7 @@ selection = st.sidebar.radio(
 # --- PAGE 1: HOME ---
 if selection == "Home":
     st.write(
-        '<p style="font-family: Chiller; color: #42c8f5; font-size: 30px; font-weight: bold; text-align: center; margin-bottom: 20px;">📊 Bbwenda Fashion</p>',
+        '<p style="font-family: Chiller; color: #42c8f5; font-size: 25px; font-weight: bold; text-align: center; margin-bottom: 20px;">📊 Bbwenda Fashion</p>',
         unsafe_allow_html=True,
     )
     
