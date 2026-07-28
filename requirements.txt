@@ -14,11 +14,8 @@ gspread-dataframe
 gspread-formatting
 gspread-pandas
 google-api-python-client
-google.oauth2.service_account
 
 # Calculations & Visualization
 pandas
 numpy
 matplotlib
-plotly==6.5.0
-openpyxl
