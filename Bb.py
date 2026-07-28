@@ -8,19 +8,20 @@ from google.oauth2.service_account import Credentials
 st.markdown(
     """
     <style>
-    /* Hides the header toolbar links (Fork, GitHub, Deploy) but keeps the container for the sidebar toggle */
+    /* Keeps header block accessible for the sidebar button but clears visible graphics */
     header[data-testid="stHeader"] {
         background-color: transparent !important;
         box-shadow: none !important;
     }
     
-    /* Safely targets and removes just the header action buttons */
-    header[data-testid="stHeader"] [data-testid="stHeaderActionElements"] {
+    /* Nukes the entire toolbar/fork button block while leaving the sidebar space alone */
+    header[data-testid="stHeader"] > div:first-child {
         display: none !important;
     }
-         
-    /* Hides the deployment/status widget just in case */
-    [data-testid="stStatusWidget"] {
+    
+    /* Explicit backup override specifically targeting the deployment/fork cluster buttons */
+    [data-testid="stHeaderActionElements"], .stAppDeployButton, [data-testid="stDecoration"] {
+        display: none !important;
         visibility: hidden !important;
     }
          
@@ -32,8 +33,6 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
-
-
 # Configure the Streamlit page layout
 st.set_page_config(page_title="Bbwenda Fashion", layout="wide")
 st.markdown("""
