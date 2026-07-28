@@ -5,35 +5,6 @@ import streamlit as st
 import datetime
 import time
 from google.oauth2.service_account import Credentials
-st.markdown(
-    """
-    <style>
-    /* Keeps the base header container accessible so the sidebar toggle is visible */
-    header[data-testid="stHeader"] {
-        background-color: transparent !important;
-        box-shadow: none !important;
-    }
-    
-    /* Targets ONLY the action element toolbar (Fork, GitHub, Deploy) on the right */
-    header[data-testid="stHeader"] [data-testid="stHeaderActionElements"] {
-        display: none !important;
-        visibility: hidden !important;
-    }
-    
-    /* Extra catch to explicitly wipe the deployment button styling if still floating */
-    .stAppDeployButton, [data-testid="stDecoration"] {
-        display: none !important;
-        visibility: hidden !important;
-    }
-         
-    /* Cleans up the top blank margin left over by the hidden header */
-    .main .block-container {
-        padding-top: 2rem !important;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
 
 # Configure the Streamlit page layout
 st.set_page_config(page_title="Bbwenda Fashion", layout="wide")
