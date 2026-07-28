@@ -5,21 +5,25 @@ import streamlit as st
 import datetime
 import time
 from google.oauth2.service_account import Credentials
-
-# Inject updated CSS to remove the top header bar entirely along with the Fork badge
 st.markdown(
     """
     <style>
-    /* Hides the Streamlit Cloud header toolbar (including Fork and GitHub buttons) */
+    /* Hides the header toolbar links (Fork, GitHub, Deploy) but keeps the container for the sidebar toggle */
     header[data-testid="stHeader"] {
-        display: none !important;
+        background-color: transparent !important;
+        box-shadow: none !important;
     }
     
+    /* Safely targets and removes just the header action buttons */
+    header[data-testid="stHeader"] [data-testid="stHeaderActionElements"] {
+        display: none !important;
+    }
+         
     /* Hides the deployment/status widget just in case */
     [data-testid="stStatusWidget"] {
         visibility: hidden !important;
     }
-    
+         
     /* Cleans up the top blank margin left over by the hidden header */
     .main .block-container {
         padding-top: 2rem !important;
@@ -28,6 +32,8 @@ st.markdown(
     """,
     unsafe_allow_html=True
 )
+
+
 # Configure the Streamlit page layout
 st.set_page_config(page_title="Bbwenda Fashion", layout="wide")
 st.markdown("""
