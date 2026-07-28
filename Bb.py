@@ -565,19 +565,28 @@ elif selection == "New Transaction Entry":
             summary_rows_markdown.append(
                 f"| {cust_name} | {item_part} | {qty} | Ugx {int(final_price):,} | Ugx {int(amount):,} | {receipt_contact} | {receipt_desc} |"
             )
-
             # Execution block: Only runs if the complete batch validation passes
             if not has_errors and len(rows_to_append) > 0:
                 with st.spinner("⏳ Safely writing all entries to Google Sheets..."):
-                    try:
-                        spreadsheet = client.open("Bb_Fasion")
-                        worksheet = spreadsheet.worksheet("BBFASION")
-                    
-                        # Appends the entire compiled list of lists at once
-                        worksheet.append_rows(rows_to_append)
-                    
-                        total_appended_amount = sum(float(row[6]) for row in rows_to_append)
-                    
+                try:
+                spreadsheet = client.open("Bb_Fasion")
+                worksheet = spreadsheet.worksheet("BBFASION")
+        
+                    # FIXED: table_range="A1" stops Google Sheets from overwriting row 1
+                    # value_input_option="USER_ENTERED" preserves formulas, dates, and number formats
+                    worksheet.append_rows(
+                        rows_to_append, 
+                        value_input_option="USER_ENTERED", 
+                        table_range="A1"
+                    )
+        
+                    total_appended_amount = sum(float(row[6]) for row in rows_to_append)
+            
+                    # Optional: Add a success message or clear session state here
+                    st.success(f"🎉 Successfully appended data! Total: Ugx {total_appended_amount:,.0f}")
+            
+                except Exception as e:
+                    st.error(f"❌ Failed to write to Google Sheets: {e}")
                         markdown_table = (
                             f"### 📋 Bbwenda Fashion Receipt\n"
                             f"**Date:** {tx_date.strftime('%Y-%m-%d')} | **Type:** {global_tx_type}\n\n"
