@@ -6,9 +6,23 @@ import datetime
 import time
 from google.oauth2.service_account import Credentials
 
+# Inject custom CSS to hide the Streamlit App toolbar/status widget
+st.markdown(
+    """
+    <style>
+    [data-testid="stStatusWidget"] {
+        visibility: hidden;
+    }
+    .viewerBadge_container__1QSob, .styles_viewerBadge__1yB5_ {
+        display: none !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
 
 # Configure the Streamlit page layout
-st.set_page_config(page_title="Fig Financial Tool", layout="wide")
+st.set_page_config(page_title="Bbwenda Fashion", layout="wide")
 st.markdown("""
     <style>
     /* 1. Base Editor Wrapper: Adds card styling and smooth glow on interaction */
