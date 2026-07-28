@@ -6,21 +6,28 @@ import datetime
 import time
 from google.oauth2.service_account import Credentials
 
-# Inject custom CSS to hide the Streamlit App toolbar/status widget
+# Inject updated CSS to remove the top header bar entirely along with the Fork badge
 st.markdown(
     """
     <style>
-    [data-testid="stStatusWidget"] {
-        visibility: hidden;
-    }
-    .viewerBadge_container__1QSob, .styles_viewerBadge__1yB5_ {
+    /* Hides the Streamlit Cloud header toolbar (including Fork and GitHub buttons) */
+    header[data-testid="stHeader"] {
         display: none !important;
+    }
+    
+    /* Hides the deployment/status widget just in case */
+    [data-testid="stStatusWidget"] {
+        visibility: hidden !important;
+    }
+    
+    /* Cleans up the top blank margin left over by the hidden header */
+    .main .block-container {
+        padding-top: 2rem !important;
     }
     </style>
     """,
     unsafe_allow_html=True
 )
-
 # Configure the Streamlit page layout
 st.set_page_config(page_title="Bbwenda Fashion", layout="wide")
 st.markdown("""
