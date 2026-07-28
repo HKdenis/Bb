@@ -1,35 +1,22 @@
-# Core App Framework & Connections
+# Main App and Database
 streamlit==1.51.0
-st-gsheets-connection==0.1.0
-git+https://github.com/streamlit/gsheets-connection
-
-# Data Analysis & Plotting
-pandas
-numpy
-matplotlib
-plotly==6.5.0
-openpyxl
-
-# Google API & Sheets Integrations
-google-api-python-client
-google-auth
-google-auth-oauthlib
-gspread
-gspread-dataframe
-gspread-formatting
-gspread-pandas
-oauth2client
-oauthlib
-requests-oauthlib
-
-# Database & Utilities
 pymongo
 pyarrow
 pydeck
 GitPython
 toml
-python-dateutil
-pytz
-sqlparse
-tenacity
-jsonschema
+
+# Google Sheets Integration (Combined & Fixed)
+st-gsheets-connection
+gspread
+gspread-dataframe
+gspread-formatting
+gspread-pandas
+google-api-python-client
+
+# Calculations & Visualization
+pandas
+numpy
+matplotlib
+plotly==6.5.0
+openpyxl
