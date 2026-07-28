@@ -382,10 +382,6 @@ elif selection == "New Transaction Entry":
             '<p style="font-family: Chiller; color: #695e82; font-size: 35px; font-weight: bold; text-align: center; margin-bottom: 20px;">Bbwenda Fashion_Sales, Purchases & Expenses entry section</p>',
             unsafe_allow_html=True,
         )
-    import streamlit as st
-    import pandas as pd
-    import datetime
-
     # Initialize key session states safely
     if "editor_session_id" not in st.session_state:
         st.session_state.editor_session_id = 0
