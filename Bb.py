@@ -549,34 +549,36 @@ elif selection == "New Transaction Entry":
                     summary_rows_markdown.append(
                         f"| {cust_name} | {item_part} | {qty} | Ugx {int(price):,} | Ugx {int(amount):,} | {receipt_contact} | {receipt_desc} |"
                     )
+                        # If completely clean, push to Google Sheets API
+                 if not has_errors and len(rows_to_append) > 0:
+                    with st.spinner("⏳ Safely writing batch to Google Sheets..."):
+                        try:
+                            spreadsheet = client.open("Bb_Fasion")
+                            worksheet = spreadsheet.worksheet("BBFASION")
+                            worksheet.append_rows(rows_to_append)
+                        
+                            # Target index position 6 (amount field column) inside the individual inner row data lists
+                            total_appended_amount = sum(float(row[6]) for row in rows_to_append)
+                        
+                            markdown_table = (
+                                f"### 📋 Bbwenda Fashion Receipt\n"
+                                f"**Date:** {tx_date.strftime('%Y-%m-%d')} | **Type:** {global_tx_type}\n\n"
+                                f"| Customer Name | Particulars | Qty | Unit Price | Total Amount | Contact | Description / Notes |\n"
+                                f"| :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n"
+                            ) + "\n".join(summary_rows_markdown) + f"\n\n**Total Amount:** Ugx {int(total_appended_amount):,}"
 
-            # If completely clean, push to Google Sheets API
-            if not has_errors and len(rows_to_append) > 0:
-                with st.spinner("⏳ Safely writing batch to Google Sheets..."):
-                    try:
-                        spreadsheet = client.open("Bb_Fasion")
-                        worksheet = spreadsheet.worksheet("BBFASION")
-                        worksheet.append_rows(rows_to_append)
+                            # Save summary for persistence, update session to delete old table state
+                            st.session_state.last_saved_summary = markdown_table
+                            st.session_state.editor_session_id += 1
                         
-                        # FIX: Target only index position 6 (amount field column) inside the individual inner row data lists
-                        total_appended_amount = sum(float(row[6]) for row in rows_to_append)
-                        
-                        markdown_table = (
-                            f"### 📋 Bbwenda Fashion Receipt\n"
-                            f"**Date:** {tx_date.strftime('%Y-%m-%d')} | **Type:** {global_tx_type}\n\n"
-                            f"| Customer Name | Particulars | Qty | Unit Price | Total Amount | Contact | Description / Notes |\n"
-                            f"| :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n"
-                        ) + "\n".join(summary_rows_markdown) + f"\n\n**Total Amount:** Ugx {int(total_appended_amount):,}"
+                            st.success("🎉 Transaction successfully recorded to Google Sheets!")
+                            st.rerun() # Immediately forces Streamlit to rebuild clean empty inputs
 
-                        st.session_state.last_saved_summary = markdown_table
-                        st.session_state.editor_session_id += 1
-                        st.success("🎉 All rows successfully saved to Google Sheets!")
-                        st.rerun()
-                        
                     except Exception as e:
-                        st.error(f"❌ Transaction aborted due to a connection issue: {str(e)}")
-            elif len(rows_to_append) == 0 and not has_errors:
-                st.error("❌ Please input data details before attempting to save.")
+                        st.error(f"❌ Google Sheets Connection Error: {str(e)}  
+                        
+            #elif len(rows_to_append) == 0 and not has_errors:
+                #st.error("❌ Please input data details before attempting to save.")
 
     # --- 6. PERSISTENT SUMMARY RECEIPT VIEW ---
     if st.session_state.last_saved_summary:
