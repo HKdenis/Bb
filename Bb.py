@@ -604,12 +604,12 @@ elif selection == "New Transaction Entry":
                         st.session_state.last_saved_summary = markdown_table
                     
                         # Force session tracking mutation to reset table interface cleanly
-                        st.session_state.editor_session_id += 1
-                        st.toast("🎉 Batch saved to Google Sheets successfully!")
-                        st.rerun()
+                        #st.session_state.editor_session_id += 1
+                        #st.toast("🎉 Batch saved to Google Sheets successfully!")
+                        #st.rerun()
 
-                    except Exception as e:
-                        st.error(f"❌ Google Sheets Connection Error: {str(e)}")
+                    #except Exception as e:
+                        #st.error(f"❌ Google Sheets Connection Error: {str(e)}")
             elif not has_errors and len(rows_to_append) == 0:
                 st.warning("⚠️ No valid rows were found to save. Please enter transaction values.")
     # --- 6. PERSISTENT SUMMARY RECEIPT VIEW ---
