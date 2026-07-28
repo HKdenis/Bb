@@ -382,6 +382,10 @@ elif selection == "New Transaction Entry":
             '<p style="font-family: Chiller; color: #695e82; font-size: 35px; font-weight: bold; text-align: center; margin-bottom: 20px;">Bbwenda Fashion_Sales, Purchases & Expenses entry section</p>',
             unsafe_allow_html=True,
         )
+    import streamlit as st
+    import pandas as pd
+    import datetime
+
     # Initialize key session states safely
     if "editor_session_id" not in st.session_state:
         st.session_state.editor_session_id = 0
@@ -430,8 +434,8 @@ elif selection == "New Transaction Entry":
         column_config={
             "Customer Name": st.column_config.TextColumn("👤 Customer Name"),
             "Item/Particulars": st.column_config.TextColumn("📦 Particulars"),
-            "Quantity": st.column_config.NumberColumn("🔢 Quantity", min_value=1, step=1),
-            "Price (Ugx)": st.column_config.NumberColumn("🏷️ Price (Ugx)", min_value=0, step=500),
+            "Quantity": st.column_config.NumberColumn("🔢 Quantity", min_value=1, step=1, default=1),
+            "Price (Ugx)": st.column_config.NumberColumn("🏷️ Price (Ugx)", min_value=0, step=500, default=0),
             "Amount (Ugx)": None,  # Hides the column completely from user view
             "Contact Number": st.column_config.TextColumn(
                 "📞 Contact Number",
@@ -447,19 +451,30 @@ elif selection == "New Transaction Entry":
     # --- 3. LIVE METRICS SUMMARY ---
     live_editor_state = st.session_state.get(editor_key, {})
     live_df = baseline_df.copy()
-    
+
     live_edited = live_editor_state.get("edited_rows", {})
     live_added = live_editor_state.get("added_rows", [])
     live_deleted = live_editor_state.get("deleted_rows", [])
 
+    # Apply cell edits safely
     for r_idx, changes in live_edited.items():
         act_idx = int(r_idx) if isinstance(r_idx, str) else r_idx
         for col, val in changes.items():
             live_df.at[act_idx, col] = val
 
+    # Safely catch added rows with sensible defaults
     for added_row in live_added:
-        live_df = pd.concat([live_df, pd.DataFrame([added_row])], ignore_index=True)
+        row_copy = {
+            "Customer Name": added_row.get("Customer Name", "Optional"),
+            "Item/Particulars": added_row.get("Item/Particulars", ""),
+            "Quantity": added_row.get("Quantity", 1),
+            "Price (Ugx)": added_row.get("Price (Ugx)", 0),
+            "Contact Number": added_row.get("Contact Number", ""),
+            "Description / Notes": added_row.get("Description / Notes", "")
+        }
+        live_df = pd.concat([live_df, pd.DataFrame([row_copy])], ignore_index=True)
 
+    # Drop any deleted rows
     if live_deleted:
         live_df = live_df.drop(index=[int(i) for i in live_deleted]).reset_index(drop=True)
 
@@ -484,7 +499,7 @@ elif selection == "New Transaction Entry":
     # --- 4. SUBMIT BUTTON ---
     submit_btn = st.button("Save All Transactions", type="primary")
 
-    # --- 5. PROCESSING LOGIC RUNS POST-CLICK ---
+    # --- 5. COMPREHENSIVE PROCESSING & RESET LOGIC ---
     if submit_btn:
         if live_df.empty:
             st.error("❌ Please add at least one transaction row.")
@@ -498,88 +513,94 @@ elif selection == "New Transaction Entry":
 
             for idx, row in live_df.iterrows():
                 cust_name = str(row.get("Customer Name", "Optional")) if pd.notna(row.get("Customer Name")) else "Optional"
-                item_part = str(row.get("Item/Particulars", "")) if pd.notna(row.get("Item/Particulars")) else "--Select Item--"
-                
+                item_part = str(row.get("Item/Particulars", "")).strip() if pd.notna(row.get("Item/Particulars")) else ""
+            
                 raw_qty = row.get("Quantity", 1)
                 qty = int(raw_qty) if pd.notna(raw_qty) else 1
-                
+            
                 raw_price = row.get("Price (Ugx)", 0)
                 price = float(raw_price) if pd.notna(raw_price) else 0.0
-                
-                # Skip accidental empty rows at bottom
-                if price == 0 and item_part in ["--Select Item--", ""]:
+            
+                # Skip completely blank accidental rows without failing the batch execution
+                if item_part in ["", "--Select Item--"] and price == 0:
                     continue
+
+                # Strict validation: If they started typing an item but didn't fill it out
+                if item_part in ["", "--Select Item--"]:
+                    st.error(f"❌ Row {idx+1}: 'Particulars' field is required.")
+                    has_errors = True
+                    break
                 
-                if is_negative_type:
-                    price = -abs(price)
-                    amount = float(qty * price)
-                else:
-                    price = abs(price)
-                    amount = float(qty * price)
+                if price <= 0:
+                    st.error(f"❌ Row {idx+1}: Price must be greater than 0 Ugx.")
+                    has_errors = True
+                    break
+            
+                # Format unit price and amount correctly based on type
+                final_price = -abs(price) if is_negative_type else abs(price)
+                amount = float(qty * final_price)
 
                 raw_contact = row.get("Contact Number", "")
                 contact_num = str(raw_contact).strip() if pd.notna(raw_contact) else ""
-                if contact_num.lower() == "none":
+                if contact_num.lower() in ["none", "nan"]:
                     contact_num = ""
 
                 raw_desc = row.get("Description / Notes", "")
                 desc = str(raw_desc).strip() if pd.notna(raw_desc) else ""
-                if desc.lower() == "none":
+                if desc.lower() in ["none", "nan"]:
                     desc = ""
-                
-                if abs(amount) <= 0:
-                    st.error(f"❌ Row {idx+1}: Price must be greater than 0 Ugx.")
-                    has_errors = True
 
-                if not has_errors:
-                    rows_to_append.append([
-                        tx_date.strftime("%Y-%m-%d"),
-                        cust_name,
-                        global_tx_type,
-                        item_part,
-                        qty,
-                        price,
-                        amount,
-                        contact_num,
-                        desc,
-                        current_ts
-                    ])
-                    receipt_contact = contact_num if contact_num != "" else "*N/A*"
-                    receipt_desc = desc if desc != "" else "*No notes*"
-                    summary_rows_markdown.append(
-                        f"| {cust_name} | {item_part} | {qty} | Ugx {int(price):,} | Ugx {int(amount):,} | {receipt_contact} | {receipt_desc} |"
-                    )
-                        # If completely clean, push to Google Sheets API
-                 if not has_errors and len(rows_to_append) > 0:
-                    with st.spinner("⏳ Safely writing batch to Google Sheets..."):
-                        try:
-                            spreadsheet = client.open("Bb_Fasion")
-                            worksheet = spreadsheet.worksheet("BBFASION")
-                            worksheet.append_rows(rows_to_append)
-                        
-                            # Target index position 6 (amount field column) inside the individual inner row data lists
-                            total_appended_amount = sum(float(row[6]) for row in rows_to_append)
-                        
-                            markdown_table = (
-                                f"### 📋 Bbwenda Fashion Receipt\n"
-                                f"**Date:** {tx_date.strftime('%Y-%m-%d')} | **Type:** {global_tx_type}\n\n"
-                                f"| Customer Name | Particulars | Qty | Unit Price | Total Amount | Contact | Description / Notes |\n"
-                                f"| :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n"
-                            ) + "\n".join(summary_rows_markdown) + f"\n\n**Total Amount:** Ugx {int(total_appended_amount):,}"
+                # Prepare arrays
+                rows_to_append.append([
+                    tx_date.strftime("%Y-%m-%d"),
+                    cust_name,
+                    global_tx_type,
+                    item_part,
+                    qty,
+                    final_price,
+                    amount,
+                    contact_num,
+                    desc,
+                    current_ts
+                ])
+            
+            receipt_contact = contact_num if contact_num != "" else "*N/A*"
+            receipt_desc = desc if desc != "" else "*No notes*"
+            summary_rows_markdown.append(
+                f"| {cust_name} | {item_part} | {qty} | Ugx {int(final_price):,} | Ugx {int(amount):,} | {receipt_contact} | {receipt_desc} |"
+            )
 
-                            # Save summary for persistence, update session to delete old table state
-                            st.session_state.last_saved_summary = markdown_table
-                            st.session_state.editor_session_id += 1
-                        
-                            st.success("🎉 Transaction successfully recorded to Google Sheets!")
-                            st.rerun() # Immediately forces Streamlit to rebuild clean empty inputs
+            # Execution block: Only runs if the complete batch validation passes
+            if not has_errors and len(rows_to_append) > 0:
+                with st.spinner("⏳ Safely writing all entries to Google Sheets..."):
+                    try:
+                        spreadsheet = client.open("Bb_Fasion")
+                        worksheet = spreadsheet.worksheet("BBFASION")
+                    
+                        # Appends the entire compiled list of lists at once
+                        worksheet.append_rows(rows_to_append)
+                    
+                        total_appended_amount = sum(float(row[6]) for row in rows_to_append)
+                    
+                        markdown_table = (
+                            f"### 📋 Bbwenda Fashion Receipt\n"
+                            f"**Date:** {tx_date.strftime('%Y-%m-%d')} | **Type:** {global_tx_type}\n\n"
+                            f"| Customer Name | Particulars | Qty | Unit Price | Total Amount | Contact | Description / Notes |\n"
+                            f"| :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n"
+                        ) + "\n".join(summary_rows_markdown) + f"\n\n**Total Amount:** Ugx {int(total_appended_amount):,}"
+
+                        # Success State Commits
+                        st.session_state.last_saved_summary = markdown_table
+                    
+                        # Force session tracking mutation to reset table interface cleanly
+                        st.session_state.editor_session_id += 1
+                        st.toast("🎉 Batch saved to Google Sheets successfully!")
+                        st.rerun()
 
                     except Exception as e:
-                        st.error(f"❌ Google Sheets Connection Error: {str(e)}  
-                        
-            #elif len(rows_to_append) == 0 and not has_errors:
-                #st.error("❌ Please input data details before attempting to save.")
-
+                        st.error(f"❌ Google Sheets Connection Error: {str(e)}")
+            elif not has_errors and len(rows_to_append) == 0:
+                st.warning("⚠️ No valid rows were found to save. Please enter transaction values.")
     # --- 6. PERSISTENT SUMMARY RECEIPT VIEW ---
     if st.session_state.last_saved_summary:
         st.divider()
