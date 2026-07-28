@@ -566,8 +566,8 @@ elif selection == "New Transaction Entry":
                 f"| {cust_name} | {item_part} | {qty} | Ugx {int(final_price):,} | Ugx {int(amount):,} | {receipt_contact} | {receipt_desc} |"
             )
             # Execution block: Only runs if the complete batch validation passes
-            if not has_errors and len(rows_to_append) > 0:
-                with st.spinner("⏳ Safely writing all entries to Google Sheets..."):
+         if not has_errors and len(rows_to_append) > 0:
+             with st.spinner("⏳ Safely writing all entries to Google Sheets..."):
                 try:
                 spreadsheet = client.open("Bb_Fasion")
                 worksheet = spreadsheet.worksheet("BBFASION")
@@ -585,7 +585,7 @@ elif selection == "New Transaction Entry":
                     # Optional: Add a success message or clear session state here
                     st.success(f"🎉 Successfully appended data! Total: Ugx {total_appended_amount:,.0f}")
             
-                except Exception as e:
+              except Exception as e:
                     st.error(f"❌ Failed to write to Google Sheets: {e}")
                         markdown_table = (
                             f"### 📋 Bbwenda Fashion Receipt\n"
