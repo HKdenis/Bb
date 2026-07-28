@@ -562,7 +562,7 @@ elif selection == "New Transaction Entry":
                         total_appended_amount = sum(float(row[6]) for row in rows_to_append)
                         
                         markdown_table = (
-                            f"### 📋 Brenda Fashion Receipt\n"
+                            f"### 📋 Bbwenda Fashion Receipt\n"
                             f"**Date:** {tx_date.strftime('%Y-%m-%d')} | **Type:** {global_tx_type}\n\n"
                             f"| Customer Name | Particulars | Qty | Unit Price | Total Amount | Contact | Description / Notes |\n"
                             f"| :--- | :--- | :--- | :--- | :--- | :--- | :--- |\n"
@@ -581,7 +581,7 @@ elif selection == "New Transaction Entry":
     # --- 6. PERSISTENT SUMMARY RECEIPT VIEW ---
     if st.session_state.last_saved_summary:
         st.divider()
-        st.subheader("📄 Saved Receipt")
+        st.subheader("📄 Receipt")
         st.markdown(st.session_state.last_saved_summary)
 
         # Display the receipt in markdown
