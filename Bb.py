@@ -382,6 +382,7 @@ elif selection == "New Transaction Entry":
             '<p style="font-family: Chiller; color: #695e82; font-size: 35px; font-weight: bold; text-align: center; margin-bottom: 20px;">Bbwenda Fashion_Sales, Purchases & Expenses entry section</p>',
             unsafe_allow_html=True,
         )
+    # --- INITIALIZATION ---
     # Initialize key session states safely
     if "editor_session_id" not in st.session_state:
         st.session_state.editor_session_id = 0
@@ -432,7 +433,6 @@ elif selection == "New Transaction Entry":
             "Item/Particulars": st.column_config.TextColumn("📦 Particulars"),
             "Quantity": st.column_config.NumberColumn("🔢 Quantity", min_value=1, step=1, default=1),
             "Price (Ugx)": st.column_config.NumberColumn("🏷️ Price (Ugx)", min_value=0, step=500, default=0),
-            "Amount (Ugx)": None,  # Hides the column completely from user view
             "Contact Number": st.column_config.TextColumn(
                 "📞 Contact Number",
                 help="Enter customer or vendor phone number"
@@ -510,13 +510,13 @@ elif selection == "New Transaction Entry":
             for idx, row in live_df.iterrows():
                 cust_name = str(row.get("Customer Name", "Optional")) if pd.notna(row.get("Customer Name")) else "Optional"
                 item_part = str(row.get("Item/Particulars", "")).strip() if pd.notna(row.get("Item/Particulars")) else ""
-            
+        
                 raw_qty = row.get("Quantity", 1)
                 qty = int(raw_qty) if pd.notna(raw_qty) else 1
-            
+        
                 raw_price = row.get("Price (Ugx)", 0)
                 price = float(raw_price) if pd.notna(raw_price) else 0.0
-            
+        
                 # Skip completely blank accidental rows without failing the batch execution
                 if item_part in ["", "--Select Item--"] and price == 0:
                     continue
@@ -526,12 +526,12 @@ elif selection == "New Transaction Entry":
                     st.error(f"❌ Row {idx+1}: 'Particulars' field is required.")
                     has_errors = True
                     break
-                
+            
                 if price <= 0:
                     st.error(f"❌ Row {idx+1}: Price must be greater than 0 Ugx.")
                     has_errors = True
                     break
-            
+        
                 # Format unit price and amount correctly based on type
                 final_price = -abs(price) if is_negative_type else abs(price)
                 amount = float(qty * final_price)
@@ -546,7 +546,7 @@ elif selection == "New Transaction Entry":
                 if desc.lower() in ["none", "nan"]:
                     desc = ""
 
-                # Prepare arrays
+                # Prepare arrays for Google Sheet insertion
                 rows_to_append.append([
                     tx_date.strftime("%Y-%m-%d"),
                     cust_name,
@@ -559,34 +559,40 @@ elif selection == "New Transaction Entry":
                     desc,
                     current_ts
                 ])
-            
-            receipt_contact = contact_num if contact_num != "" else "*N/A*"
-            receipt_desc = desc if desc != "" else "*No notes*"
-            summary_rows_markdown.append(
-                f"| {cust_name} | {item_part} | {qty} | Ugx {int(final_price):,} | Ugx {int(amount):,} | {receipt_contact} | {receipt_desc} |"
-            )
-            # Execution block: Only runs if the complete batch validation passes
-         if not has_errors and len(rows_to_append) > 0:
-             with st.spinner("⏳ Safely writing all entries to Google Sheets..."):
-                try:
-                spreadsheet = client.open("Bb_Fasion")
-                worksheet = spreadsheet.worksheet("BBFASION")
         
-                    # FIXED: table_range="A1" stops Google Sheets from overwriting row 1
-                    # value_input_option="USER_ENTERED" preserves formulas, dates, and number formats
-                    worksheet.append_rows(
-                        rows_to_append, 
-                        value_input_option="USER_ENTERED", 
-                        table_range="A1"
-                    )
-        
-                    total_appended_amount = sum(float(row[6]) for row in rows_to_append)
+                receipt_contact = contact_num if contact_num != "" else "*N/A*"
+                receipt_desc = desc if desc != "" else "*No notes*"
+                summary_rows_markdown.append(
+                    f"| {cust_name} | {item_part} | {qty} | Ugx {int(final_price):,} | Ugx {int(amount):,} | {receipt_contact} | {receipt_desc} |"
+                )
+
+            # Execution block: Only runs if validation completely passes
+            if not has_errors and len(rows_to_append) > 0:
+                with st.spinner("⏳ Safely writing all entries to Google Sheets..."):
+                    try:
+                        # Establish connection to sheet using your existing client object
+                        spreadsheet = client.open("Bb_Fasion")
+                        worksheet = spreadsheet.worksheet("BBFASION")
             
-                    # Optional: Add a success message or clear session state here
-                    st.success(f"🎉 Successfully appended data! Total: Ugx {total_appended_amount:,.0f}")
+                        # Fix: table_range="A1" stops it from wiping out row 1 headers
+                        worksheet.append_rows(
+                            rows_to_append,
+                            value_input_option="USER_ENTERED",
+                            table_range="A1"
+                        )
             
-              except Exception as e:
-                    st.error(f"❌ Failed to write to Google Sheets: {e}")
+                        total_appended_amount = sum(float(row[6]) for row in rows_to_append)
+                    
+                        st.success(f"🎉 Batch processing complete! Successfully saved {len(rows_to_append)} records.")
+                        st.toast("Data synchronized successfully!", icon="✅")
+
+                        # Force Streamlit to destroy and recreate data_editor back to blank state
+                        st.session_state.editor_session_id += 1
+                        st.rerun()
+
+                    except Exception as e:
+                        st.error(f"❌ Failed to write to Google Sheets: {str(e)}")
+
                         markdown_table = (
                             f"### 📋 Bbwenda Fashion Receipt\n"
                             f"**Date:** {tx_date.strftime('%Y-%m-%d')} | **Type:** {global_tx_type}\n\n"
